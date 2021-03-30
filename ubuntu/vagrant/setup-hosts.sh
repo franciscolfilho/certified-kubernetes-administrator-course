@@ -13,5 +13,7 @@ cat >> /etc/hosts <<EOF
 192.168.5.12  master-2
 192.168.5.21  worker-1
 192.168.5.22  worker-2
+192.168.5.23  worker-3
+192.168.5.24  worker-4
 192.168.5.30  lb
 EOF
