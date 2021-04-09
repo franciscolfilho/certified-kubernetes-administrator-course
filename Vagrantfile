@@ -3,7 +3,7 @@
 
 # Define the number of master and worker nodes
 # If this number is changed, remember to update setup-hosts.sh script with the new hosts IP details in /etc/hosts of each VM.
-NUM_MASTER_NODE = 2
+NUM_MASTER_NODE = 3
 NUM_WORKER_NODE = 4
 
 IP_NW = "192.168.56."
@@ -24,8 +24,8 @@ Vagrant.configure("2") do |config|
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
   # config.vm.box = "base"
-  #config.vm.box = "ubuntu/bionic64"
-  config.vm.box = "ubuntu/focal64"
+  config.vm.box = "ubuntu/bionic64"
+  #config.vm.box = "ubuntu/focal64"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
