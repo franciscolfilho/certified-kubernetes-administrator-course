@@ -61,7 +61,7 @@ Vagrant.configure("2") do |config|
         # Name shown in the GUI
         node.vm.provider "virtualbox" do |vb|
             vb.name = "kubernetes-ha-master-#{i}"
-            vb.memory = 2048
+            vb.memory = 1024
             vb.cpus = 2
         end
         node.vm.hostname = "master-#{i}"
@@ -76,6 +76,7 @@ Vagrant.configure("2") do |config|
         node.vm.provision "install-docker", type: "shell", :path => "ubuntu/install-docker-2.sh"
         node.vm.provision "setup-cgroup-docker-driver", type: "shell", :path => "ubuntu/setup-cgroup-docker-driver.sh"
         node.vm.provision "allow-bridge-nf-traffic", :type => "shell", :path => "ubuntu/allow-bridge-nf-traffic.sh"
+        node.vm.provision "fix-timezone", :type => "shell", :path => "ubuntu/fix-timezone.sh"
 
       end
   end
@@ -95,6 +96,7 @@ Vagrant.configure("2") do |config|
     end
 
     node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
+    node.vm.provision "fix-timezone", :type => "shell", :path => "ubuntu/fix-timezone.sh"
 
   end
 
@@ -120,6 +122,7 @@ Vagrant.configure("2") do |config|
         node.vm.provision "install-docker", type: "shell", :path => "ubuntu/install-docker-2.sh"
         node.vm.provision "setup-cgroup-docker-driver", type: "shell", :path => "ubuntu/setup-cgroup-docker-driver.sh"
         node.vm.provision "allow-bridge-nf-traffic", :type => "shell", :path => "ubuntu/allow-bridge-nf-traffic.sh"
+        node.vm.provision "fix-timezone", :type => "shell", :path => "ubuntu/fix-timezone.sh"
     end
   end
 end
