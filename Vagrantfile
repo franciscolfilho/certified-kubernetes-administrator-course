@@ -6,11 +6,13 @@
 NUM_MASTER_NODE = 3
 NUM_WORKER_NODE = 4
 
+
 IP_NW = "192.168.56."
 MASTER_IP_START = 10
 NODE_IP_START = 20
 LB_IP_START = 30
-
+ROUTER_IP_INT_START = 40
+ROUTER_IP_EXT_START = 41
 
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
@@ -54,6 +56,51 @@ Vagrant.configure("2") do |config|
   #
   # View the documentation for the provider you are using for more
   # information on available options.
+
+  # Provision Internal HAProxy Router 
+  config.vm.define "haproxy-router-int" do |node|
+    node.vm.provider "virtualbox" do |vb|
+        vb.name = "haproxy-router-int"
+        vb.memory = 512
+        vb.cpus = 1
+    end
+    node.vm.hostname = "haproxy-router-int"
+
+    node.vm.network :private_network, ip: IP_NW + "#{ROUTER_IP_INT_START}"
+
+    node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
+    node.vm.provision "fix-timezone", :type => "shell", :path => "ubuntu/fix-timezone.sh"
+
+    node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
+      s.args = ["enp0s8"]
+    end
+
+    node.vm.provision "install-haproxy", :type => "shell", :path => "ubuntu/install-haproxy-int.sh"
+  end
+
+  # Provision External HAProxy Router 
+  config.vm.define "haproxy-router-ext" do |node|
+    node.vm.provider "virtualbox" do |vb|
+        vb.name = "haproxy-router-ext"
+        vb.memory = 512
+        vb.cpus = 1
+    end
+    node.vm.hostname = "haproxy-router-ext"
+
+    node.vm.network :private_network, ip: IP_NW + "#{ROUTER_IP_EXT_START}"
+
+    node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
+    node.vm.provision "fix-timezone", :type => "shell", :path => "ubuntu/fix-timezone.sh"
+
+    node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
+      s.args = ["enp0s8"]
+    end
+ 
+    node.vm.provision "install-haproxy", :type => "shell", :path => "ubuntu/install-haproxy-ext.sh"
+  end
+
+
+
 
   # Provision Master Nodes
   (1..NUM_MASTER_NODE).each do |i|
