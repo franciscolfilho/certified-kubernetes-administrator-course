@@ -3,7 +3,11 @@
 
 # Define the number of master and worker nodes
 # If this number is changed, remember to update setup-hosts.sh script with the new hosts IP details in /etc/hosts of each VM.
-NUM_MASTER_NODE = 3
+
+## Para poupar memória
+NUM_MASTER_NODE = 1
+#NUM_MASTER_NODE = 3
+#
 NUM_WORKER_NODE = 4
 
 
@@ -144,6 +148,7 @@ Vagrant.configure("2") do |config|
 
     node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
     node.vm.provision "fix-timezone", :type => "shell", :path => "ubuntu/fix-timezone.sh"
+    node.vm.provision "install-haproxy-api-loadbalancer", :type => "shell", :path => "ubuntu/install-haproxy-api-loadbalancer.sh"
 
   end
 
