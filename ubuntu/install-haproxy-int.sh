@@ -36,7 +36,10 @@ frontend https_request
     tcp-request inspect-delay 5s
     tcp-request content accept if { req.ssl_hello_type 1 }
 
+    ## Opção 1
     use_backend ingress-controller-interno-https if { req.ssl_sni -m dom gov.teste }
+    ## Opção 2
+    #use_backend ingress-controller-interno-https if { req.ssl_sni -m end gov.teste }
 
 backend ingress-controller-interno-http
     mode tcp
