@@ -4,6 +4,8 @@ sudo apt-get update && \
 sudo apt-get install -y haproxy
 
 ROUTER_EXT_ADDRESS=$(grep worker-4 /etc/hosts | awk '{print $1}') && \
+HTTP_PORT=$(kubectl get service haproxy-ingress-controller-externo-kubernetes-ingress -n ingress-controller-externo -o jsonpath='{.spec.ports[0].nodePort}')
+HTTPS_PORT=$(kubectl get service haproxy-ingress-controller-externo-kubernetes-ingress -n ingress-controller-externo -o jsonpath='{.spec.ports[1].nodePort}')
 
 sudo tee /etc/haproxy/haproxy.cfg <<EOF
 global
@@ -36,18 +38,15 @@ frontend https_request
     tcp-request inspect-delay 5s
     tcp-request content accept if { req.ssl_hello_type 1 }
 
-    ## Opção 1
     use_backend ingress-controller-externo-https if { req.ssl_sni -m dom jus.teste }
-    ## Opção 2
-    #use_backend ingress-controller-externo-https if { req.ssl_sni -m end jus.teste }
 
 backend ingress-controller-externo-http
     mode tcp
-    server router-ext-http ${ROUTER_EXT_ADDRESS}:32478 check
+    server router-ext-http ${ROUTER_EXT_ADDRESS}:${HTTP_PORT} check
 
 backend ingress-controller-externo-https
     mode tcp
-    server router-ext-https ${ROUTER_EXT_ADDRESS}:32706 check
+    server router-ext-https ${ROUTER_EXT_ADDRESS}:${HTTPS_PORT} check
 EOF
 
 sudo systemctl restart haproxy.service

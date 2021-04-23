@@ -4,6 +4,8 @@ sudo apt-get update && \
 sudo apt-get install -y haproxy
 
 ROUTER_INT_ADDRESS=$(grep worker-3 /etc/hosts | awk '{print $1}') && \
+HTTP_PORT=$(kubectl get service haproxy-ingress-controller-interno-kubernetes-ingress -n ingress-controller-interno -o jsonpath='{.spec.ports[0].nodePort}')
+HTTPS_PORT=$(kubectl get service haproxy-ingress-controller-interno-kubernetes-ingress -n ingress-controller-interno -o jsonpath='{.spec.ports[1].nodePort}')
 
 sudo tee /etc/haproxy/haproxy.cfg <<EOF
 global
@@ -37,17 +39,17 @@ frontend https_request
     tcp-request content accept if { req.ssl_hello_type 1 }
 
     ## Opção 1
-    use_backend ingress-controller-interno-https if { req.ssl_sni -m dom gov.teste }
+    use_backend ingress-controller-interno-https if { req.ssl_sni -m end gov.teste }
     ## Opção 2
-    #use_backend ingress-controller-interno-https if { req.ssl_sni -m end gov.teste }
+    #use_backend ingress-controller-interno-https if { req.ssl_sni -m dom gov.teste }
 
 backend ingress-controller-interno-http
     mode tcp
-    server router-int-http ${ROUTER_INT_ADDRESS}:32089 check
+    server router-int-http ${ROUTER_INT_ADDRESS}:${HTTP_PORT} check
 
 backend ingress-controller-interno-https
     mode tcp
-    server router-int-https ${ROUTER_INT_ADDRESS}:31574 check
+    server router-int-https ${ROUTER_INT_ADDRESS}:${HTTPS_PORT} check
 EOF
 
 sudo systemctl restart haproxy.service

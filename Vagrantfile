@@ -61,6 +61,81 @@ Vagrant.configure("2") do |config|
   # View the documentation for the provider you are using for more
   # information on available options.
 
+
+  # Provision Master Nodes
+  (1..NUM_MASTER_NODE).each do |i|
+      config.vm.define "master-#{i}" do |node|
+        # Name shown in the GUI
+        node.vm.provider "virtualbox" do |vb|
+            vb.name = "kubernetes-ha-master-#{i}"
+            vb.memory = 1024
+            vb.cpus = 2
+        end
+        node.vm.hostname = "master-#{i}"
+        node.vm.network :private_network, ip: IP_NW + "#{MASTER_IP_START + i}"
+
+        node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
+          s.args = ["enp0s8"]
+        end
+
+        node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
+        node.vm.provision "install-docker", type: "shell", :path => "ubuntu/install-docker-2.sh"
+        node.vm.provision "setup-cgroup-docker-driver", type: "shell", :path => "ubuntu/setup-cgroup-docker-driver.sh"
+        node.vm.provision "allow-bridge-nf-traffic", :type => "shell", :path => "ubuntu/allow-bridge-nf-traffic.sh"
+        node.vm.provision "fix-timezone", :type => "shell", :path => "ubuntu/fix-timezone.sh"
+        node.vm.provision "share-master-kubeconfig", :type => "shell", privileged: false, :path => "ubuntu/share-master-kubeconfig.sh"
+
+        node.vm.provision "install-kubernetes-common-tools.sh", :type => "shell", :path => "ubuntu/install-kubernetes-common-tools.sh"
+      end
+  end
+
+  # Provision Worker Nodes
+  (1..NUM_WORKER_NODE).each do |i|
+    config.vm.define "worker-#{i}" do |node|
+        node.vm.provider "virtualbox" do |vb|
+            vb.name = "kubernetes-ha-worker-#{i}"
+            vb.memory = 1024
+            vb.cpus = 1
+        end
+        node.vm.hostname = "worker-#{i}"
+        node.vm.network :private_network, ip: IP_NW + "#{NODE_IP_START + i}"
+
+        node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
+          s.args = ["enp0s8"]
+        end
+
+        node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
+        node.vm.provision "install-docker", type: "shell", :path => "ubuntu/install-docker-2.sh"
+        node.vm.provision "setup-cgroup-docker-driver", type: "shell", :path => "ubuntu/setup-cgroup-docker-driver.sh"
+        node.vm.provision "allow-bridge-nf-traffic", :type => "shell", :path => "ubuntu/allow-bridge-nf-traffic.sh"
+        node.vm.provision "fix-timezone", :type => "shell", :path => "ubuntu/fix-timezone.sh"
+
+        node.vm.provision "install-kubernetes-common-tools.sh", :type => "shell", :path => "ubuntu/install-kubernetes-common-tools.sh"
+    end
+  end
+
+  # Provision Load Balancer Node
+  config.vm.define "loadbalancer" do |node|
+    node.vm.provider "virtualbox" do |vb|
+        vb.name = "kubernetes-ha-lb"
+        vb.memory = 512
+        vb.cpus = 1
+    end
+    node.vm.hostname = "loadbalancer"
+    node.vm.network :private_network, ip: IP_NW + "#{LB_IP_START}"
+
+    node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
+      s.args = ["enp0s8"]
+    end
+
+    node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
+    node.vm.provision "fix-timezone", :type => "shell", :path => "ubuntu/fix-timezone.sh"
+    node.vm.provision "install-haproxy-api-loadbalancer", :type => "shell", :path => "ubuntu/install-haproxy-api-loadbalancer.sh"
+    node.vm.provision "copy-master-kubeconfig", :type => "shell", privileged: false, :path => "ubuntu/copy-master-kubeconfig.sh"
+
+    node.vm.provision "install-kubernetes-common-tools.sh", :type => "shell", :path => "ubuntu/install-kubernetes-common-tools.sh"
+  end
+
   # Provision Internal HAProxy Router 
   config.vm.define "haproxy-router-int" do |node|
     node.vm.provider "virtualbox" do |vb|
@@ -80,6 +155,9 @@ Vagrant.configure("2") do |config|
     end
 
     node.vm.provision "install-haproxy", :type => "shell", :path => "ubuntu/install-haproxy-int.sh"
+    node.vm.provision "copy-master-kubeconfig", :type => "shell", privileged: false, :path => "ubuntu/copy-master-kubeconfig.sh"
+
+    node.vm.provision "install-kubernetes-common-tools.sh", :type => "shell", :path => "ubuntu/install-kubernetes-common-tools.sh"
   end
 
   # Provision External HAProxy Router 
@@ -101,80 +179,9 @@ Vagrant.configure("2") do |config|
     end
  
     node.vm.provision "install-haproxy", :type => "shell", :path => "ubuntu/install-haproxy-ext.sh"
+    node.vm.provision "copy-master-kubeconfig", :type => "shell", privileged: false, :path => "ubuntu/copy-master-kubeconfig.sh"
+
+    node.vm.provision "install-kubernetes-common-tools.sh", :type => "shell", :path => "ubuntu/install-kubernetes-common-tools.sh"
   end
 
-
-
-
-  # Provision Master Nodes
-  (1..NUM_MASTER_NODE).each do |i|
-      config.vm.define "master-#{i}" do |node|
-        # Name shown in the GUI
-        node.vm.provider "virtualbox" do |vb|
-            vb.name = "kubernetes-ha-master-#{i}"
-            vb.memory = 1024
-            vb.cpus = 2
-        end
-        node.vm.hostname = "master-#{i}"
-        node.vm.network :private_network, ip: IP_NW + "#{MASTER_IP_START + i}"
-        node.vm.network "forwarded_port", guest: 22, host: "#{2710 + i}"
-
-        node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
-          s.args = ["enp0s8"]
-        end
-
-        node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
-        node.vm.provision "install-docker", type: "shell", :path => "ubuntu/install-docker-2.sh"
-        node.vm.provision "setup-cgroup-docker-driver", type: "shell", :path => "ubuntu/setup-cgroup-docker-driver.sh"
-        node.vm.provision "allow-bridge-nf-traffic", :type => "shell", :path => "ubuntu/allow-bridge-nf-traffic.sh"
-        node.vm.provision "fix-timezone", :type => "shell", :path => "ubuntu/fix-timezone.sh"
-
-      end
-  end
-  # Provision Load Balancer Node
-  config.vm.define "loadbalancer" do |node|
-    node.vm.provider "virtualbox" do |vb|
-        vb.name = "kubernetes-ha-lb"
-        vb.memory = 512
-        vb.cpus = 1
-    end
-    node.vm.hostname = "loadbalancer"
-    node.vm.network :private_network, ip: IP_NW + "#{LB_IP_START}"
-	node.vm.network "forwarded_port", guest: 22, host: 2730
-
-    node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
-      s.args = ["enp0s8"]
-    end
-
-    node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
-    node.vm.provision "fix-timezone", :type => "shell", :path => "ubuntu/fix-timezone.sh"
-    node.vm.provision "install-haproxy-api-loadbalancer", :type => "shell", :path => "ubuntu/install-haproxy-api-loadbalancer.sh"
-
-  end
-
-
-
-  # Provision Worker Nodes
-  (1..NUM_WORKER_NODE).each do |i|
-    config.vm.define "worker-#{i}" do |node|
-        node.vm.provider "virtualbox" do |vb|
-            vb.name = "kubernetes-ha-worker-#{i}"
-            vb.memory = 1024
-            vb.cpus = 1
-        end
-        node.vm.hostname = "worker-#{i}"
-        node.vm.network :private_network, ip: IP_NW + "#{NODE_IP_START + i}"
-                node.vm.network "forwarded_port", guest: 22, host: "#{2720 + i}"
-
-        node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
-          s.args = ["enp0s8"]
-        end
-
-        node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
-        node.vm.provision "install-docker", type: "shell", :path => "ubuntu/install-docker-2.sh"
-        node.vm.provision "setup-cgroup-docker-driver", type: "shell", :path => "ubuntu/setup-cgroup-docker-driver.sh"
-        node.vm.provision "allow-bridge-nf-traffic", :type => "shell", :path => "ubuntu/allow-bridge-nf-traffic.sh"
-        node.vm.provision "fix-timezone", :type => "shell", :path => "ubuntu/fix-timezone.sh"
-    end
-  end
 end
