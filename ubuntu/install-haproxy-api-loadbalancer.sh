@@ -10,6 +10,19 @@ MASTER3_ADDRESS=$(grep master-3 /etc/hosts | awk '{print $1}') && \
 
 
 cat <<EOF | sudo tee /etc/haproxy/haproxy.cfg
+global
+    log /dev/log local0
+    ssl-server-verify none
+    user    haproxy
+    group   haproxy
+    daemon
+
+defaults
+    log global
+    timeout client 60s
+    timeout server 60s
+    timeout connect 10s
+
 frontend kubernetes
     bind ${LOADBALANCER_ADDRESS}:6443
     option tcplog
