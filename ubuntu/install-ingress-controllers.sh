@@ -8,10 +8,10 @@ helm repo update
 
 helm install --create-namespace --namespace=ingress-controller-interno haproxy-ingress-controller-interno haproxytech/kubernetes-ingress \
     --set controller.ingressClass=haproxy-interno \
-    --set controller.nodeSelector.router=interno.teste.local \
+    --set controller.nodeSelector.router=interno.gov.teste \
     --set controller.nodeSelector."node-role\.kubernetes\.io/infra"= \
     --set defaultBackend.nodeSelector."node-role\.kubernetes\.io/infra"= \
-    --set defaultBackend.nodeSelector.router=interno.teste.local \
+    --set defaultBackend.nodeSelector.router=interno.gov.teste \
     --set-string "controller.config.syslog-server=address:stdout\, format:raw\, facility:daemon" \
     --set controller.tolerations[0].key="router-int" \
     --set controller.tolerations[0].value="reserved" \
@@ -22,10 +22,10 @@ helm install --create-namespace --namespace=ingress-controller-interno haproxy-i
 
 helm install --create-namespace --namespace=ingress-controller-externo haproxy-ingress-controller-externo haproxytech/kubernetes-ingress \
     --set controller.ingressClass=haproxy-externo \
-    --set controller.nodeSelector.router=externo.teste.local \
+    --set controller.nodeSelector.router=externo.jus.teste \
     --set controller.nodeSelector."node-role\.kubernetes\.io/infra"= \
     --set defaultBackend.nodeSelector."node-role\.kubernetes\.io/infra"= \
-    --set defaultBackend.nodeSelector.router=externo.teste.local \
+    --set defaultBackend.nodeSelector.router=externo.jus.teste \
     --set-string "controller.config.syslog-server=address:stdout\, format:raw\, facility:daemon" \
     --set controller.tolerations[0].key="router-ext" \
     --set controller.tolerations[0].value="reserved" \
