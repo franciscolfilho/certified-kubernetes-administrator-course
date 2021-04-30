@@ -30,7 +30,8 @@ KUBEADM_INIT_STDOUT="/vagrant/kubeadm_init.out"
 sudo tee ${PODNODESELECTOR_CONFIG_FILE} <<EOF
 podNodeSelectorPluginConfig:
   clusterDefaultNodeSelector: "environment=nonproduction"
-  echoserver: "environment=production"
+  echoserver-desenvolvimento: "environment=nonproduction"
+  echoserver-producao: "environment=production"
 EOF
 
 sudo tee ${ADMISSION_CONTROL_CONFIG_FILE} <<EOF
