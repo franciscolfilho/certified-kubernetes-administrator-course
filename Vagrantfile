@@ -127,8 +127,10 @@ Vagrant.configure("2") do |config|
        node.vm.provision "install-control-plane-master-1", :type => "shell", privileged: false, :path => "ubuntu/install-control-plane-master-1.sh"
        node.vm.provision "install-pod-netword-addon-master-1", :type => "shell", privileged: false, :path => "ubuntu/install-pod-netword-addon.sh"
        node.vm.provision "share-master-kubeconfig", :type => "shell", privileged: false, :path => "ubuntu/share-master-kubeconfig.sh"
+       node.vm.provision "set-control-plane-admission-controller", :type => "shell", privileged: false, :path => "ubuntu/set-control-plane-admission-controller.sh"
     end
 
+ 
     ## Concluindo configuração dos master nodes restantes
     (2..NUM_MASTER_NODE).each do |i|
 	config.vm.define "master-#{i}" do |node|
