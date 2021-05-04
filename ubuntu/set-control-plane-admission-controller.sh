@@ -23,15 +23,20 @@
 INTERNAL_IP=$(ip addr show enp0s8 | grep "inet " | awk '{print $2}' | cut -d / -f 1) 
 LOADBALANCER_ADDRESS=$(grep lb /etc/hosts | awk '{print $1}') 
 
+KUBEADM_INIT_CONFIG_FILE="/vagrant/kube_init_config.yaml"
 ADMISSION_CONTROL_CONFIG_FILE="/vagrant/admission-control.yaml"
 PODNODESELECTOR_CONFIG_FILE="/vagrant/podnodeselector.yaml"
 
+## Namespaces fora do ${PODNODESELECTOR_CONFIG_FILE} não possuem restrição
+## Namespaces kube-system e ingress-controller-* estão propositalmente fora dessa lista
+## Namespaces das aplicações devem obrigatoriamente estar cadastradas abaixo
 sudo tee ${PODNODESELECTOR_CONFIG_FILE} <<EOF
 podNodeSelectorPluginConfig:
-  clusterDefaultNodeSelector: "environment=nonproduction"
   echoserver-desenvolvimento: "environment=nonproduction"
   echoserver-producao: "environment=production"
 EOF
+
+
 
 sudo tee ${ADMISSION_CONTROL_CONFIG_FILE} <<EOF
 apiVersion: apiserver.config.k8s.io/v1
@@ -70,6 +75,40 @@ apiServer:
       readOnly: true
 EOF
 
+#kubectl logs -n kube-system kube-apiserver-master-1
+
+#sudo tee ${KUBEADM_INIT_CONFIG_FILE} <<EOF
+#apiVersion: kubeadm.k8s.io/v1beta2
+#kind: InitConfiguration
+#localAPIEndpoint:
+#  advertiseAddress: "${INTERNAL_IP}"
+#  bindPort: 6443
+#---
+#apiVersion: kubeadm.k8s.io/v1beta2
+#kind: ClusterConfiguration
+#kubernetesVersion: ${KUBERNETES_VERSION}
+#controlPlaneEndpoint: "${LOADBALANCER_ADDRESS}:6443"
+#networking:
+#  podSubnet: "10.244.0.0/16"
+#apiServer:
+#  extraArgs:
+#    advertise-address: ${INTERNAL_IP}
+#    enable-admission-plugins: NodeRestriction,PodNodeSelector
+#    disable-admission-plugins: CertificateApproval, CertificateSigning, CertificateSubjectRestriction, DefaultIngressClass, DefaultStorageClass, DefaultTolerationSeconds, LimitRanger, MutatingAdmissionWebhook, NamespaceLifecycle, PersistentVolumeClaimResize, Priority, ResourceQuota, RuntimeClass, ServiceAccount, StorageObjectInUseProtection, TaintNodesByCondition, ValidatingAdmissionWebhook
+#    admission-control-config-file: ${ADMISSION_CONTROL_CONFIG_FILE}
+#  extraVolumes:
+#    - name: admission-file
+#      hostPath: ${ADMISSION_CONTROL_CONFIG_FILE}
+#      mountPath: ${ADMISSION_CONTROL_CONFIG_FILE}
+#      readOnly: true
+#    - name: podnodeselector-file
+#      hostPath: ${PODNODESELECTOR_CONFIG_FILE}
+#      mountPath: ${PODNODESELECTOR_CONFIG_FILE}
+#      readOnly: true
+#EOF
+
+
+
 kubectl get nodes
 
 let minutes=0
@@ -77,8 +116,9 @@ let timeout=5
 while [ true ]
 do
    ## Checa status do node
-    nodeReadyStatus=$(kubectl get nodes -o jsonpath='{range .items[*]}{.status.conditions[?(@.type=="Ready")].status}{end}')
-    [[ "$nodeReadyStatus" = "True" ]] && break;
+    #nodeReadyStatus=$(kubectl get nodes -o jsonpath='{range .items[*]}{.status.conditions[?(@.type=="Ready")].status}{end}')
+    nodeReadyStatus=$(kubectl get nodes master-1 |grep -c 'Ready')
+    [[ "$nodeReadyStatus" = "1" ]] && break;
 
     [[ ${minutes} -eq 5 ]] && { echo "ERROR: Timeout reached $minutes minutes"; exit 1; }
 

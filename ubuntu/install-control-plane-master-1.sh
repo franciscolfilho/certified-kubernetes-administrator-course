@@ -1,6 +1,5 @@
 #!/bin/sh
 
-KUBEADM_INIT_CONFIG_FILE="/vagrant/kube_init_config.yaml"
 
 INTERNAL_IP=$(ip addr show enp0s8 | grep "inet " | awk '{print $2}' | cut -d / -f 1) 
 LOADBALANCER_ADDRESS=$(grep lb /etc/hosts | awk '{print $1}') 

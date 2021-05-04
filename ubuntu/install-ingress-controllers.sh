@@ -4,7 +4,47 @@ sudo snap install helm --classic && \
 helm repo add haproxytech https://haproxytech.github.io/helm-charts && \
 helm repo update
 
-#--- https://artifacthub.io/packages/helm/haproxy-ingress/haproxy-ingress
+
+#---------------------------------------------------------------------------------------------------------
+#REFERÊNCIAS:
+#
+### Geral:
+#https://www.haproxy.com/documentation/hapee/1-5r2/installation/kubernetes-ingress-controller/  
+#https://www.haproxy.com/documentation/kubernetes/latest/configuration/controller/#--ingress.class
+#  
+### HAPROXY-INGRESS (HAProxy Enterprise Kubernetes Ingress Controller):
+#  https://haproxy-ingress.github.io/docs/getting-started/
+#  
+#  https://haproxy-ingress.github.io/docs/configuration/keys/
+#  "HAProxy Ingress by default does not listen to Ingress resources"
+#
+### HAPROXYTECH (HAProxy Kubernetes Ingress Controller Community version):
+#  https://github.com/haproxytech/kubernetes-ingress/tree/master/documentation
+#  
+#  https://github.com/haproxytech/kubernetes-ingress/blob/master/documentation/controller.md
+#    "Ingress and service annotations can have ingress.kubernetes.io, haproxy.org and haproxy.com prefixes"
+#
+##--- https://artifacthub.io/packages/helm/haproxy-ingress/haproxy-ingress
+#---------------------------------------------------------------------------------------------------------
+
+#kubectl create namespace ingress-controller-interno
+#kubectl annotate namespace ingress-controller-interno scheduler.alpha.kubernetes.io/node-selector=router=interno.gov.teste
+#
+#helm install --namespace=ingress-controller-interno haproxy-ingress-controller-interno haproxytech/kubernetes-ingress \
+#    --set controller.ingressClass=haproxy-interno \
+#    --set controller.nodeSelector.router=interno.gov.teste \
+#    --set controller.nodeSelector."node-role\.kubernetes\.io/infra"= \
+#    --set defaultBackend.nodeSelector."node-role\.kubernetes\.io/infra"= \
+#    --set defaultBackend.nodeSelector.router=interno.gov.teste \
+#    --set-string "controller.config.syslog-server=address:stdout\, format:raw\, facility:daemon" \
+#    --set controller.tolerations[0].key="router-int" \
+#    --set controller.tolerations[0].value="reserved" \
+#    --set controller.tolerations[0].effect="NoSchedule" \
+#    --set defaultBackend.tolerations[0].key="router-int" \
+#    --set defaultBackend.tolerations[0].value="reserved" \
+#    --set defaultBackend.tolerations[0].effect="NoSchedule" \
+#    --set controller.podAnnotations."scheduler\.alpha\.kubernetes\.io/node-selector=router=interno.gov.teste" \
+#    --set defaultBackend.podAnnotations."scheduler\.alpha\.kubernetes\.io/node-selector=router=interno.gov.teste"
 
 helm install --create-namespace --namespace=ingress-controller-interno haproxy-ingress-controller-interno haproxytech/kubernetes-ingress \
     --set controller.ingressClass=haproxy-interno \
@@ -18,7 +58,27 @@ helm install --create-namespace --namespace=ingress-controller-interno haproxy-i
     --set controller.tolerations[0].effect="NoSchedule" \
     --set defaultBackend.tolerations[0].key="router-int" \
     --set defaultBackend.tolerations[0].value="reserved" \
-    --set defaultBackend.tolerations[0].effect="NoSchedule"
+    --set defaultBackend.tolerations[0].effect="NoSchedule" 
+
+#kubectl create namespace ingress-controller-externo
+#kubectl annotate namespace ingress-controller-externo scheduler.alpha.kubernetes.io/node-selector=router=externo.gov.teste
+#
+#helm install --namespace=ingress-controller-externo haproxy-ingress-controller-externo haproxytech/kubernetes-ingress \
+#    --set controller.ingressClass=haproxy-externo \
+#    --set controller.nodeSelector.router=externo.jus.teste \
+#    --set controller.nodeSelector."node-role\.kubernetes\.io/infra"= \
+#    --set defaultBackend.nodeSelector."node-role\.kubernetes\.io/infra"= \
+#    --set defaultBackend.nodeSelector.router=externo.jus.teste \
+#    --set-string "controller.config.syslog-server=address:stdout\, format:raw\, facility:daemon" \
+#    --set controller.tolerations[0].key="router-ext" \
+#    --set controller.tolerations[0].value="reserved" \
+#    --set controller.tolerations[0].effect="NoSchedule" \
+#    --set defaultBackend.tolerations[0].key="router-ext" \
+#    --set defaultBackend.tolerations[0].value="reserved" \
+#    --set defaultBackend.tolerations[0].effect="NoSchedule" \
+#    --set controller.podAnnotations."scheduler\.alpha\.kubernetes\.io/node-selector=router=externo.gov.teste" \
+#    --set defaultBackend.podAnnotations."scheduler\.alpha\.kubernetes\.io/node-selector=router=externo.gov.teste"
+
 
 helm install --create-namespace --namespace=ingress-controller-externo haproxy-ingress-controller-externo haproxytech/kubernetes-ingress \
     --set controller.ingressClass=haproxy-externo \
@@ -32,7 +92,7 @@ helm install --create-namespace --namespace=ingress-controller-externo haproxy-i
     --set controller.tolerations[0].effect="NoSchedule" \
     --set defaultBackend.tolerations[0].key="router-ext" \
     --set defaultBackend.tolerations[0].value="reserved" \
-    --set defaultBackend.tolerations[0].effect="NoSchedule"
+    --set defaultBackend.tolerations[0].effect="NoSchedule" 
 
 ## Criando certificado wildcard auto-assinado
 openssl req -x509 \
